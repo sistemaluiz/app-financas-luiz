@@ -25,7 +25,7 @@ db.connect(err => {
     if (err) throw err;
     console.log('Conectado ao banco de dados.');
 });
-function errorHandler(err, req, res, next) {
+function errorHandler(err, req, res) {
     console.error('Erro:', err);
     res.status(500).json({ error: 'Ocorreu um erro devido a instabilidade no servidor tente novamente mais tarde, isso pode ser rápido de 5 à 20 minutos devido a grande demanda do servidor, obrigado por compreender.' });
 }
@@ -39,7 +39,7 @@ function getTransacaoComIcone(transacao) {
     return `${transacao.tipo} ${transacao.valor} ${transacao.data} ${icon} ${transacao.nome_do_item}`;
 }
 
-app.get('/', (req, res) => {
+app.get('/', (req, res, next) => {
     // Consulta principal
     const query = `
         SELECT
@@ -77,7 +77,7 @@ app.get('/', (req, res) => {
     `;
 
     db.query(query, (err, result) => {
-        if (err) return next(err);
+       // if (err) return next(err);
 
         const saldo = parseFloat(result[0].saldo) || 0;
         const total_entrada = parseFloat(result[0].total_entrada) || 0;
@@ -132,7 +132,7 @@ WHERE DATE(data) = CURDATE()
     });
 });
 
-app.get('/edit-transacao/:id', (req, res) => {
+app.get('/edit-transacao/:id', (req, res, next) => {
     const { id } = req.params;
     const query = 'SELECT * FROM transacoes WHERE id = ?';
     db.query(query, [id], (err, result) => {
@@ -145,7 +145,7 @@ app.get('/edit-transacao/:id', (req, res) => {
     });
 });
 
-app.post('/add-transacao', (req, res) => {
+app.post('/add-transacao', (req, res, next) => {
     const { tipo, valor, forma_pagamento, nome_do_item, Descricao } = req.body;
     const query = 'INSERT INTO transacoes (tipo, valor, forma_pagamento, NOME_DO_ITEM, Descricao, fechado, data) VALUES (?, ?, ?, ?, ?, FALSE, CURRENT_DATE)';
     
@@ -156,7 +156,7 @@ app.post('/add-transacao', (req, res) => {
     });
 });
 
-app.post('/update-transacao', (req, res) => {
+app.post('/update-transacao', (req, res, next) => {
     const { id, nome_do_item, tipo, valor, data, forma_pagamento, Descricao } = req.body;
     const query = 'UPDATE transacoes SET tipo = ?, valor = ?, data = ?, forma_pagamento = ?, NOME_DO_ITEM = ?, Descricao = ? WHERE id = ?';
     db.query(query, [tipo, valor, data, forma_pagamento, nome_do_item, Descricao, id], (err, result) => {
@@ -165,7 +165,7 @@ app.post('/update-transacao', (req, res) => {
     });
 });
 
-app.post('/delete-transacao', (req, res) => {
+app.post('/delete-transacao', (req, res, next) => {
     const { id } = req.body;
     const query = 'DELETE FROM transacoes WHERE id = ?';
     db.query(query, [id], (err, result) => {
@@ -198,7 +198,7 @@ app.get('/', async (req, res) => {
 });
 
 
-app.post('/fechar-caixa', (req, res) => {
+app.post('/fechar-caixa', (req, res, next) => {
     const query = 'UPDATE transacoes SET fechado = TRUE WHERE fechado = FALSE';
     db.query(query, (err, result) => {
         if (err) return next(err);
@@ -234,7 +234,7 @@ app.get('/search', (req, res) => {
         });
     });
 });
-app.get('/relatorio-mensal', (req, res) => {
+app.get('/relatorio-mensal', (req, res, next) => {
     const { mes, ano } = req.query;
 
     // Consulta SQL para somar as entradas e saídas do mês especificado
