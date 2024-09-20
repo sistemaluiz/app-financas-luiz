@@ -13,18 +13,39 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(cors());
-
-const db = mysql.createConnection({
+const dbConfig = {
     host: 'byra6ouupvthwnn7gh2c-mysql.services.clever-cloud.com',
     user: 'usrbusupz7tzhngs',
     password: 'VXGTiellCU2VXS2hSn7k',
     database: 'byra6ouupvthwnn7gh2c'
-});
+};
 
-db.connect(err => {
-    if (err) throw err;
-    console.log('Conectado ao banco de dados.');
-});
+let db; // Variável que armazenará a conexão
+
+function handleDisconnect() {
+    db = mysql.createConnection(dbConfig); // Recria a conexão
+
+    db.connect(err => {
+        if (err) {
+            console.error('Erro ao conectar ao banco de dados: ' + err.stack);
+            setTimeout(handleDisconnect, 2000); // Tenta reconectar após 2 segundos
+        } else {
+            console.log('Conectado ao banco de dados.');
+        }
+    });
+
+    // Lida com erros de conexão
+    db.on('error', err => {
+        console.log('Erro na conexão: ' + err.code);
+        if (err.code === 'PROTOCOL_CONNECTION_LOST') {
+            handleDisconnect(); // Se a conexão foi perdida, tenta reconectar
+        } else {
+            throw err; // Lança outros erros
+        }
+    });
+}
+
+handleDisconnect(); 
 function errorHandler(err, req, res) {
     console.error('Erro:', err);
     res.status(500).json({ error: 'Ocorreu um erro devido a instabilidade no servidor tente novamente mais tarde, isso pode ser rápido de 5 à 20 minutos devido a grande demanda do servidor, obrigado por compreender.' });
